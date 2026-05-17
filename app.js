@@ -1,6 +1,8 @@
 const STORAGE_KEY = "karada-log-records";
 const SETTINGS_KEY = "karada-log-settings";
 const DEFAULT_HEIGHT_CM = 164;
+const DEFAULT_STEP_GOAL = 8000;
+const DEFAULT_CALORIE_GOAL = 1800;
 
 const els = {
   form: document.querySelector("#entryForm"),
@@ -21,7 +23,15 @@ const els = {
   latestCalories: document.querySelector("#latestCalories"),
   avgSteps: document.querySelector("#avgSteps"),
   avgCalories: document.querySelector("#avgCalories"),
+  activityAverageSteps: document.querySelector("#activityAverageSteps"),
+  activityTotalSteps: document.querySelector("#activityTotalSteps"),
+  stepGoalStatus: document.querySelector("#stepGoalStatus"),
+  activityAverageCalories: document.querySelector("#activityAverageCalories"),
+  activityTotalCalories: document.querySelector("#activityTotalCalories"),
+  calorieGoalStatus: document.querySelector("#calorieGoalStatus"),
   chart: document.querySelector("#trendChart"),
+  activityChart: document.querySelector("#activityChart"),
+  calorieChart: document.querySelector("#calorieChart"),
   history: document.querySelector("#historyList"),
   empty: document.querySelector("#emptyState"),
   rangeButtons: document.querySelectorAll("[data-range]"),
@@ -33,14 +43,19 @@ const els = {
   settingsButton: document.querySelector("#settingsButton"),
   settingsDialog: document.querySelector("#settingsDialog"),
   height: document.querySelector("#heightInput"),
+  stepGoal: document.querySelector("#stepGoalInput"),
+  calorieGoal: document.querySelector("#calorieGoalInput"),
   saveSettings: document.querySelector("#saveSettingsButton"),
   clear: document.querySelector("#clearButton"),
+  tabButtons: document.querySelectorAll("[data-tab]"),
+  tabPanels: document.querySelectorAll("[data-tab-panel]"),
 };
 
 let records = readRecords();
 let settings = readSettings();
 let activeRange = "7";
 let syncTimer = null;
+let activeTab = "record";
 
 function todayString() {
   const now = new Date();
@@ -76,6 +91,14 @@ function saveSettings() {
 
 function currentHeight() {
   return Number(settings.height) || DEFAULT_HEIGHT_CM;
+}
+
+function currentStepGoal() {
+  return Number(settings.stepGoal) || DEFAULT_STEP_GOAL;
+}
+
+function currentCalorieGoal() {
+  return Number(settings.calorieGoal) || DEFAULT_CALORIE_GOAL;
 }
 
 function sortRecords(list) {
@@ -147,6 +170,16 @@ function averageMetric(list, key, days) {
   return sliced.reduce((sum, item) => sum + item[key], 0) / sliced.length;
 }
 
+function metricTotalAndAverage(list, key, days) {
+  const recent = list.slice(-days).filter((item) => Number.isFinite(item[key]));
+  const total = recent.reduce((sum, item) => sum + item[key], 0);
+  return {
+    total,
+    average: recent.length ? total / recent.length : null,
+    count: recent.length,
+  };
+}
+
 function filteredRecords() {
   const sorted = sortRecords(records);
   if (activeRange === "all") return sorted;
@@ -172,6 +205,20 @@ function renderSummary() {
   els.latestCalories.textContent = latest ? formatInteger(latest.calories, "kcal") : "--";
   els.avgSteps.textContent = `7日平均 ${formatInteger(averageMetric(sorted, "steps", 7), "歩")}`;
   els.avgCalories.textContent = `7日平均 ${formatInteger(averageMetric(sorted, "calories", 7), "kcal")}`;
+  const stepStats = metricTotalAndAverage(sorted, "steps", 7);
+  const stepGoal = currentStepGoal();
+  els.activityAverageSteps.textContent = formatInteger(stepStats.average, "歩");
+  els.activityTotalSteps.textContent = stepStats.count ? formatInteger(stepStats.total, "歩") : "--";
+  els.stepGoalStatus.textContent = Number.isFinite(stepStats.average)
+    ? `${formatInteger(stepGoal, "歩")} / ${stepStats.average >= stepGoal ? "達成中" : "あと少し"}`
+    : formatInteger(stepGoal, "歩");
+  const calorieStats = metricTotalAndAverage(sorted, "calories", 7);
+  const calorieGoal = currentCalorieGoal();
+  els.activityAverageCalories.textContent = formatInteger(calorieStats.average, "kcal");
+  els.activityTotalCalories.textContent = calorieStats.count ? formatInteger(calorieStats.total, "kcal") : "--";
+  els.calorieGoalStatus.textContent = Number.isFinite(calorieStats.average)
+    ? `${formatInteger(calorieGoal, "kcal")} / ${calorieStats.average >= calorieGoal ? "達成中" : "あと少し"}`
+    : formatInteger(calorieGoal, "kcal");
 
   if (latest) {
     const meters = currentHeight() / 100;
@@ -294,6 +341,135 @@ function drawChart() {
   ctx.fillText(formatDate(data.at(-1).date), width - right, height - 10);
 }
 
+function prepareCanvas(canvas) {
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.max(1, Math.round(rect.width * dpr));
+  canvas.height = Math.max(1, Math.round(rect.height * dpr));
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  return {
+    ctx,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
+function drawBarGoalChart(canvas, options) {
+  if (!canvas) return;
+
+  const { ctx, width, height } = prepareCanvas(canvas);
+  const data = sortRecords(records).slice(-7);
+  const top = 20;
+  const right = 16;
+  const bottom = 40;
+  const left = 42;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#fbfdfb";
+  ctx.fillRect(0, 0, width, height);
+
+  const availableValues = data
+    .map((item) => Number(item[options.key]))
+    .filter((value) => Number.isFinite(value));
+
+  if (!availableValues.length) {
+    ctx.fillStyle = "#64716b";
+    ctx.font = "15px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(options.emptyText, width / 2, height / 2);
+    return;
+  }
+
+  const goal = options.goal;
+  const maxValue = Math.max(goal, ...availableValues);
+  const scaleMax = Math.ceil(maxValue / options.scaleStep) * options.scaleStep || options.scaleStep;
+  const chartWidth = width - left - right;
+  const chartHeight = height - top - bottom;
+  const barGap = Math.max(8, chartWidth * 0.025);
+  const slotWidth = chartWidth / Math.max(data.length, 1);
+  const barWidth = Math.max(10, slotWidth - barGap);
+  const yFor = (value) => top + (1 - value / scaleMax) * chartHeight;
+
+  ctx.strokeStyle = "#dfe7df";
+  ctx.lineWidth = 1;
+  ctx.fillStyle = "#64716b";
+  ctx.font = "11px sans-serif";
+  ctx.textAlign = "right";
+  for (let i = 0; i < 4; i += 1) {
+    const value = (scaleMax / 3) * i;
+    const y = yFor(value);
+    ctx.beginPath();
+    ctx.moveTo(left, y);
+    ctx.lineTo(width - right, y);
+    ctx.stroke();
+    if (i > 0) {
+      ctx.fillText(Math.round(value).toLocaleString("ja-JP"), left - 6, y + 4);
+    }
+  }
+
+  const goalY = yFor(goal);
+  ctx.strokeStyle = "#78b866";
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(left, goalY);
+  ctx.lineTo(width - right, goalY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#4f8f43";
+  ctx.textAlign = "right";
+  ctx.fillText(`目標 ${formatInteger(goal, options.unit)}`, width - right, Math.max(top + 12, goalY - 6));
+
+  data.forEach((item, index) => {
+    const x = left + index * slotWidth + (slotWidth - barWidth) / 2;
+    const value = Number.isFinite(item[options.key]) ? item[options.key] : 0;
+    const y = yFor(value);
+    const barHeight = Math.max(0, top + chartHeight - y);
+    ctx.fillStyle = value >= goal ? options.color : options.underColor;
+    ctx.fillRect(x, y, barWidth, barHeight);
+  });
+
+  ctx.fillStyle = "#64716b";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+  data.forEach((item, index) => {
+    const x = left + index * slotWidth + slotWidth / 2;
+    const label = new Intl.DateTimeFormat("ja-JP", { weekday: "short" }).format(new Date(`${item.date}T00:00:00`));
+    ctx.fillText(label, x, height - 12);
+  });
+}
+
+function drawActivityChart() {
+  drawBarGoalChart(els.activityChart, {
+    key: "steps",
+    goal: currentStepGoal(),
+    unit: "歩",
+    scaleStep: 1000,
+    color: "#12aaa5",
+    underColor: "#7db9b6",
+    emptyText: "歩数を取り込むと表示されます",
+  });
+}
+
+function drawCalorieChart() {
+  drawBarGoalChart(els.calorieChart, {
+    key: "calories",
+    goal: currentCalorieGoal(),
+    unit: "kcal",
+    scaleStep: 500,
+    color: "#7a5bb0",
+    underColor: "#b5a4d8",
+    emptyText: "消費カロリーを取り込むと表示されます",
+  });
+}
+
+function drawAllCharts() {
+  drawChart();
+  drawActivityChart();
+  drawCalorieChart();
+}
+
 function renderHistory() {
   const sorted = sortRecords(records).reverse();
   els.empty.hidden = sorted.length > 0;
@@ -328,7 +504,22 @@ function escapeHtml(value) {
 function render() {
   renderSummary();
   renderHistory();
-  drawChart();
+  drawAllCharts();
+}
+
+function showTab(tabName) {
+  activeTab = tabName;
+  els.tabButtons.forEach((button) => {
+    const isActive = button.dataset.tab === tabName;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+  els.tabPanels.forEach((panel) => {
+    panel.hidden = panel.dataset.tabPanel !== tabName;
+  });
+  if (tabName === "chart") {
+    requestAnimationFrame(drawAllCharts);
+  }
 }
 
 async function syncToServer() {
@@ -432,8 +623,12 @@ els.rangeButtons.forEach((button) => {
   button.addEventListener("click", () => {
     activeRange = button.dataset.range;
     els.rangeButtons.forEach((item) => item.classList.toggle("active", item === button));
-    drawChart();
+    drawAllCharts();
   });
+});
+
+els.tabButtons.forEach((button) => {
+  button.addEventListener("click", () => showTab(button.dataset.tab));
 });
 
 els.history.addEventListener("click", (event) => {
@@ -486,12 +681,18 @@ els.importFile.addEventListener("change", async () => {
 
 els.settingsButton.addEventListener("click", () => {
   els.height.value = settings.height || DEFAULT_HEIGHT_CM;
+  els.stepGoal.value = settings.stepGoal || DEFAULT_STEP_GOAL;
+  els.calorieGoal.value = settings.calorieGoal || DEFAULT_CALORIE_GOAL;
   els.settingsDialog.showModal();
 });
 
 els.saveSettings.addEventListener("click", () => {
   const height = Number(els.height.value);
+  const stepGoal = Number(els.stepGoal.value);
+  const calorieGoal = Number(els.calorieGoal.value);
   settings.height = Number.isFinite(height) && height > 0 ? height : null;
+  settings.stepGoal = Number.isFinite(stepGoal) && stepGoal > 0 ? Math.round(stepGoal) : null;
+  settings.calorieGoal = Number.isFinite(calorieGoal) && calorieGoal > 0 ? Math.round(calorieGoal) : null;
   saveSettings();
   render();
 });
@@ -504,8 +705,9 @@ els.clear.addEventListener("click", () => {
   els.settingsDialog.close();
 });
 
-window.addEventListener("resize", drawChart);
+window.addEventListener("resize", drawAllCharts);
 
 els.date.value = todayString();
 render();
+showTab(activeTab);
 loadServerRecords();

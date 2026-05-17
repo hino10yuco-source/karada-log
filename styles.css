@@ -9,6 +9,11 @@
   --average: #d08b2f;
   --average-thirty: #4d6fb3;
   --fat: #b44e5f;
+  --steps: #12aaa5;
+  --steps-under: #7db9b6;
+  --goal: #78b866;
+  --calories: #7a5bb0;
+  --calories-under: #b5a4d8;
   --accent: #315c72;
   --danger: #a33d3d;
   --shadow: 0 18px 48px rgba(37, 48, 42, 0.12);
@@ -51,6 +56,41 @@ input {
 
 .topbar {
   padding: max(8px, env(safe-area-inset-top)) 2px 14px;
+}
+
+.app-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin: 0 -2px 12px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(248, 250, 247, 0.94);
+  backdrop-filter: blur(12px);
+}
+
+.app-tabs button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.app-tabs button.active {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 8px rgba(25, 33, 29, 0.12);
+}
+
+[data-tab-panel][hidden] {
+  display: none;
 }
 
 .eyebrow {
@@ -284,6 +324,18 @@ canvas {
   background: var(--fat);
 }
 
+.steps-dot {
+  background: var(--steps);
+}
+
+.calories-dot {
+  background: var(--calories);
+}
+
+.goal-dot {
+  background: var(--goal);
+}
+
 .insight-grid {
   grid-template-columns: repeat(4, 1fr);
   margin-top: 12px;
@@ -303,6 +355,26 @@ canvas {
 
 .activity-grid {
   margin-top: 12px;
+}
+
+.activity-chart-panel {
+  margin-top: 12px;
+}
+
+.activity-chart-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 22px;
+  margin: 2px 0 12px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.activity-chart-summary strong {
+  color: var(--ink);
+  font-size: 0.95rem;
 }
 
 .activity-grid strong {

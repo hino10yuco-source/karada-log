@@ -20,7 +20,13 @@
         </button>
       </header>
 
-      <section class="summary-grid" aria-label="最新サマリー">
+      <nav class="app-tabs" aria-label="表示切り替え">
+        <button type="button" class="active" data-tab="record">記録</button>
+        <button type="button" data-tab="chart">グラフ</button>
+        <button type="button" data-tab="history">履歴</button>
+      </nav>
+
+      <section class="summary-grid" aria-label="最新サマリー" data-tab-panel="record">
         <article class="metric-panel accent-weight">
           <span class="metric-label">最新体重</span>
           <strong id="latestWeight">--</strong>
@@ -33,7 +39,7 @@
         </article>
       </section>
 
-      <section class="input-panel" aria-labelledby="entryTitle">
+      <section class="input-panel" aria-labelledby="entryTitle" data-tab-panel="record">
         <div class="section-heading">
           <h2 id="entryTitle">今日の記録</h2>
           <button class="text-button" id="todayButton" type="button">今日</button>
@@ -61,7 +67,7 @@
         </form>
       </section>
 
-      <section class="chart-panel" aria-labelledby="chartTitle">
+      <section class="chart-panel" aria-labelledby="chartTitle" data-tab-panel="chart" hidden>
         <div class="section-heading">
           <h2 id="chartTitle">推移</h2>
           <div class="segmented" role="tablist" aria-label="表示期間">
@@ -82,7 +88,7 @@
         </div>
       </section>
 
-      <section class="insight-grid" aria-label="分析">
+      <section class="insight-grid" aria-label="分析" data-tab-panel="chart" hidden>
         <article>
           <span>7日平均</span>
           <strong id="avgSeven">--</strong>
@@ -101,7 +107,7 @@
         </article>
       </section>
 
-      <section class="activity-grid" aria-label="活動量">
+      <section class="activity-grid" aria-label="活動量" data-tab-panel="chart" hidden>
         <article>
           <span>最新歩数</span>
           <strong id="latestSteps">--</strong>
@@ -114,7 +120,43 @@
         </article>
       </section>
 
-      <section class="history-panel" aria-labelledby="historyTitle">
+      <section class="chart-panel activity-chart-panel" aria-labelledby="activityChartTitle" data-tab-panel="chart" hidden>
+        <div class="section-heading">
+          <h2 id="activityChartTitle">歩数</h2>
+        </div>
+        <div class="activity-chart-summary" aria-label="歩数の集計">
+          <span>7日平均 <strong id="activityAverageSteps">--</strong></span>
+          <span>7日合計 <strong id="activityTotalSteps">--</strong></span>
+          <span>目標 <strong id="stepGoalStatus">--</strong></span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="activityChart" width="720" height="320" aria-label="直近7日の歩数グラフ"></canvas>
+        </div>
+        <div class="legend" aria-hidden="true">
+          <span><i class="dot steps-dot"></i>歩数</span>
+          <span><i class="dot goal-dot"></i>目標ライン</span>
+        </div>
+      </section>
+
+      <section class="chart-panel activity-chart-panel" aria-labelledby="calorieChartTitle" data-tab-panel="chart" hidden>
+        <div class="section-heading">
+          <h2 id="calorieChartTitle">消費カロリー</h2>
+        </div>
+        <div class="activity-chart-summary" aria-label="消費カロリーの集計">
+          <span>7日平均 <strong id="activityAverageCalories">--</strong></span>
+          <span>7日合計 <strong id="activityTotalCalories">--</strong></span>
+          <span>目標 <strong id="calorieGoalStatus">--</strong></span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="calorieChart" width="720" height="320" aria-label="直近7日の消費カロリーグラフ"></canvas>
+        </div>
+        <div class="legend" aria-hidden="true">
+          <span><i class="dot calories-dot"></i>消費カロリー</span>
+          <span><i class="dot goal-dot"></i>目標ライン</span>
+        </div>
+      </section>
+
+      <section class="history-panel" aria-labelledby="historyTitle" data-tab-panel="history" hidden>
         <div class="section-heading">
           <h2 id="historyTitle">履歴</h2>
           <div class="actions">
@@ -141,6 +183,14 @@
         <label>
           <span>身長 cm</span>
           <input id="heightInput" type="number" min="100" max="230" step="0.1" inputmode="decimal" placeholder="165.0">
+        </label>
+        <label>
+          <span>目標歩数 歩</span>
+          <input id="stepGoalInput" type="number" min="1000" max="50000" step="500" inputmode="numeric" placeholder="8000">
+        </label>
+        <label>
+          <span>目標消費カロリー kcal</span>
+          <input id="calorieGoalInput" type="number" min="100" max="10000" step="50" inputmode="numeric" placeholder="1800">
         </label>
         <div class="dialog-actions">
           <button class="text-button danger" id="clearButton" type="button">全データ削除</button>
