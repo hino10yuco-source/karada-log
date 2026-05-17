@@ -76,7 +76,8 @@ h2 {
 }
 
 .summary-grid,
-.insight-grid {
+.insight-grid,
+.activity-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -87,6 +88,7 @@ h2 {
 .chart-panel,
 .history-panel,
 .insight-grid article,
+.activity-grid article,
 .dialog-card {
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--line);
@@ -105,6 +107,7 @@ h2 {
 
 .metric-label,
 .insight-grid span,
+.activity-grid span,
 label span {
   color: var(--muted);
   font-size: 0.82rem;
@@ -286,14 +289,30 @@ canvas {
   margin-top: 12px;
 }
 
-.insight-grid article {
+.insight-grid article,
+.activity-grid article {
   padding: 14px 12px;
 }
 
-.insight-grid strong {
+.insight-grid strong,
+.activity-grid strong {
   display: block;
   margin-top: 6px;
   font-size: 1.1rem;
+}
+
+.activity-grid {
+  margin-top: 12px;
+}
+
+.activity-grid strong {
+  font-size: 1.45rem;
+}
+
+.activity-grid small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
 }
 
 .actions {
@@ -356,6 +375,11 @@ canvas {
   overflow-wrap: anywhere;
 }
 
+.history-activity {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .delete-button {
   border: 0;
   width: 38px;
@@ -400,5 +424,9 @@ dialog::backdrop {
 
   .insight-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .activity-grid {
+    grid-template-columns: 1fr;
   }
 }

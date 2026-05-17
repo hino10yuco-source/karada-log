@@ -17,6 +17,10 @@ const els = {
   avgFourteen: document.querySelector("#avgFourteen"),
   bmi: document.querySelector("#bmiValue"),
   recordCount: document.querySelector("#recordCount"),
+  latestSteps: document.querySelector("#latestSteps"),
+  latestCalories: document.querySelector("#latestCalories"),
+  avgSteps: document.querySelector("#avgSteps"),
+  avgCalories: document.querySelector("#avgCalories"),
   chart: document.querySelector("#trendChart"),
   history: document.querySelector("#historyList"),
   empty: document.querySelector("#emptyState"),
@@ -88,6 +92,8 @@ function mergeRecords(...lists) {
       date: item.date,
       weight: Number(item.weight),
       fat: itemFat ?? existing?.fat ?? null,
+      steps: normalizePositiveInteger(item.steps) ?? existing?.steps ?? null,
+      calories: normalizePositiveInteger(item.calories) ?? existing?.calories ?? null,
       note: String(item.note || ""),
     });
   });
@@ -98,9 +104,18 @@ function formatNumber(value, unit) {
   return Number.isFinite(value) ? `${value.toFixed(1)}${unit}` : "--";
 }
 
+function formatInteger(value, unit = "") {
+  return Number.isFinite(value) ? `${Math.round(value).toLocaleString("ja-JP")}${unit}` : "--";
+}
+
 function normalizeFat(value) {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+function normalizePositiveInteger(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? Math.round(number) : null;
 }
 
 function formatDate(value) {
@@ -126,6 +141,12 @@ function averageWeight(list, days) {
   return sliced.reduce((sum, item) => sum + item.weight, 0) / sliced.length;
 }
 
+function averageMetric(list, key, days) {
+  const sliced = list.slice(-days).filter((item) => Number.isFinite(item[key]));
+  if (!sliced.length) return null;
+  return sliced.reduce((sum, item) => sum + item[key], 0) / sliced.length;
+}
+
 function filteredRecords() {
   const sorted = sortRecords(records);
   if (activeRange === "all") return sorted;
@@ -147,6 +168,10 @@ function renderSummary() {
   els.avgSeven.textContent = formatNumber(averageWeight(sorted, 7), "kg");
   els.avgFourteen.textContent = formatNumber(averageWeight(sorted, 14), "kg");
   els.recordCount.textContent = `${records.length}日`;
+  els.latestSteps.textContent = latest ? formatInteger(latest.steps, "歩") : "--";
+  els.latestCalories.textContent = latest ? formatInteger(latest.calories, "kcal") : "--";
+  els.avgSteps.textContent = `7日平均 ${formatInteger(averageMetric(sorted, "steps", 7), "歩")}`;
+  els.avgCalories.textContent = `7日平均 ${formatInteger(averageMetric(sorted, "calories", 7), "kcal")}`;
 
   if (latest) {
     const meters = currentHeight() / 100;
@@ -281,6 +306,7 @@ function renderHistory() {
       <div class="history-main">
         <span class="history-date">${formatDate(record.date)}</span>
         <span class="history-values">${formatNumber(record.weight, "kg")} / ${formatNumber(record.fat, "%")}</span>
+        <span class="history-activity">${formatInteger(record.steps, "歩")} / ${formatInteger(record.calories, "kcal")}</span>
         ${record.note ? `<span class="history-note">${escapeHtml(record.note)}</span>` : ""}
       </div>
       <button class="delete-button" type="button" aria-label="${record.date}の記録を削除" data-delete="${record.date}">×</button>
@@ -346,9 +372,9 @@ function upsertRecord(record) {
 }
 
 function exportCsv() {
-  const rows = [["date", "weight_kg", "body_fat_percent", "note"]];
+  const rows = [["date", "weight_kg", "body_fat_percent", "steps", "calories_kcal", "note"]];
   sortRecords(records).forEach((record) => {
-    rows.push([record.date, record.weight, record.fat, record.note || ""]);
+    rows.push([record.date, record.weight, record.fat, record.steps ?? "", record.calories ?? "", record.note || ""]);
   });
   const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
