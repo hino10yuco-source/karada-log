@@ -1,0 +1,10 @@
+{
+  "name": "からだログ",
+  "short_name": "からだログ",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8faf7",
+  "theme_color": "#f8faf7",
+  "lang": "ja",
+  "icons": []
+}
