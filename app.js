@@ -13,6 +13,8 @@ const els = {
   today: document.querySelector("#todayButton"),
   latestWeight: document.querySelector("#latestWeight"),
   latestFat: document.querySelector("#latestFat"),
+  latestWeightDate: document.querySelector("#latestWeightDate"),
+  latestFatDate: document.querySelector("#latestFatDate"),
   weightDelta: document.querySelector("#weightDelta"),
   fatDelta: document.querySelector("#fatDelta"),
   avgSevenWeight: document.querySelector("#avgSevenWeight"),
@@ -225,6 +227,8 @@ function renderSummary() {
 
   els.latestWeight.textContent = latest ? formatNumber(latest.weight, "kg") : "--";
   els.latestFat.textContent = latestFatRecord ? formatNumber(latestFatRecord.fat, "%") : "--";
+  els.latestWeightDate.textContent = latest ? formatDate(latest.date) : "--";
+  els.latestFatDate.textContent = latestFatRecord ? formatDate(latestFatRecord.date) : "--";
   els.weightDelta.textContent = latest ? deltaText(latest.weight, previous?.weight, "kg") : "記録待ち";
   els.fatDelta.textContent = latestFatRecord ? deltaText(latestFatRecord.fat, previousFatRecord?.fat, "%") : "記録待ち";
 

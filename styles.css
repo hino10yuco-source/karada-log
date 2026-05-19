@@ -163,6 +163,11 @@ label span {
   color: var(--muted);
 }
 
+.metric-date {
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .accent-weight {
   border-top: 4px solid var(--weight);
 }
