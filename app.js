@@ -15,8 +15,12 @@ const els = {
   latestFat: document.querySelector("#latestFat"),
   weightDelta: document.querySelector("#weightDelta"),
   fatDelta: document.querySelector("#fatDelta"),
-  avgSeven: document.querySelector("#avgSeven"),
-  avgFourteen: document.querySelector("#avgFourteen"),
+  avgSevenWeight: document.querySelector("#avgSevenWeight"),
+  avgSevenFat: document.querySelector("#avgSevenFat"),
+  avgSevenDiff: document.querySelector("#avgSevenDiff"),
+  avgFourteenWeight: document.querySelector("#avgFourteenWeight"),
+  avgFourteenFat: document.querySelector("#avgFourteenFat"),
+  avgFourteenDiff: document.querySelector("#avgFourteenDiff"),
   bmi: document.querySelector("#bmiValue"),
   recordCount: document.querySelector("#recordCount"),
   latestSteps: document.querySelector("#latestSteps"),
@@ -170,6 +174,32 @@ function averageMetric(list, key, days) {
   return sliced.reduce((sum, item) => sum + item[key], 0) / sliced.length;
 }
 
+function windowAverage(list, key, start, days) {
+  const sliced = list.slice(start, start + days).filter((item) => Number.isFinite(item[key]));
+  if (!sliced.length) return null;
+  return sliced.reduce((sum, item) => sum + item[key], 0) / sliced.length;
+}
+
+function averageComparison(list, key, days) {
+  const currentStart = Math.max(0, list.length - days);
+  const previousStart = Math.max(0, list.length - days * 2);
+  const previousEnd = currentStart;
+  const current = windowAverage(list, key, currentStart, days);
+  const previous = windowAverage(list, key, previousStart, previousEnd - previousStart);
+
+  return {
+    current,
+    previous,
+    diff: Number.isFinite(current) && Number.isFinite(previous) ? current - previous : null,
+  };
+}
+
+function diffText(diff, unit) {
+  if (!Number.isFinite(diff)) return "--";
+  const sign = diff > 0 ? "+" : "";
+  return `${sign}${diff.toFixed(1)}${unit}`;
+}
+
 function metricTotalAndAverage(list, key, days) {
   const recent = list.slice(-days).filter((item) => Number.isFinite(item[key]));
   const total = recent.reduce((sum, item) => sum + item[key], 0);
@@ -198,8 +228,16 @@ function renderSummary() {
   els.weightDelta.textContent = latest ? deltaText(latest.weight, previous?.weight, "kg") : "記録待ち";
   els.fatDelta.textContent = latestFatRecord ? deltaText(latestFatRecord.fat, previousFatRecord?.fat, "%") : "記録待ち";
 
-  els.avgSeven.textContent = formatNumber(averageWeight(sorted, 7), "kg");
-  els.avgFourteen.textContent = formatNumber(averageWeight(sorted, 14), "kg");
+  const sevenWeight = averageComparison(sorted, "weight", 7);
+  const sevenFat = averageComparison(sorted, "fat", 7);
+  const fourteenWeight = averageComparison(sorted, "weight", 14);
+  const fourteenFat = averageComparison(sorted, "fat", 14);
+  els.avgSevenWeight.textContent = `体重 ${formatNumber(sevenWeight.current, "kg")}`;
+  els.avgSevenFat.textContent = `体脂肪率 ${formatNumber(sevenFat.current, "%")}`;
+  els.avgSevenDiff.textContent = `前7日比 体重 ${diffText(sevenWeight.diff, "kg")} / 体脂肪率 ${diffText(sevenFat.diff, "%")}`;
+  els.avgFourteenWeight.textContent = `体重 ${formatNumber(fourteenWeight.current, "kg")}`;
+  els.avgFourteenFat.textContent = `体脂肪率 ${formatNumber(fourteenFat.current, "%")}`;
+  els.avgFourteenDiff.textContent = `前14日比 体重 ${diffText(fourteenWeight.diff, "kg")} / 体脂肪率 ${diffText(fourteenFat.diff, "%")}`;
   els.recordCount.textContent = `${records.length}日`;
   els.latestSteps.textContent = latest ? formatInteger(latest.steps, "歩") : "--";
   els.latestCalories.textContent = latest ? formatInteger(latest.calories, "kcal") : "--";

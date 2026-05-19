@@ -353,6 +353,14 @@ canvas {
   font-size: 1.1rem;
 }
 
+.average-card small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
 .activity-grid {
   margin-top: 12px;
 }
