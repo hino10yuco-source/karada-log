@@ -13,6 +13,7 @@ const els = {
   calories: document.querySelector("#caloriesInput"),
   note: document.querySelector("#noteInput"),
   today: document.querySelector("#todayButton"),
+  yesterday: document.querySelector("#yesterdayButton"),
   latestWeight: document.querySelector("#latestWeight"),
   latestFat: document.querySelector("#latestFat"),
   latestWeightDate: document.querySelector("#latestWeightDate"),
@@ -65,10 +66,19 @@ let activeRange = "7";
 let syncTimer = null;
 let activeTab = "record";
 
+function dateInputString(date) {
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date - offset).toISOString().slice(0, 10);
+}
+
 function todayString() {
-  const now = new Date();
-  const offset = now.getTimezoneOffset() * 60000;
-  return new Date(now - offset).toISOString().slice(0, 10);
+  return dateInputString(new Date());
+}
+
+function yesterdayString() {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return dateInputString(date);
 }
 
 function readRecords() {
@@ -672,6 +682,10 @@ els.form.addEventListener("submit", (event) => {
 
 els.today.addEventListener("click", () => {
   els.date.value = todayString();
+});
+
+els.yesterday.addEventListener("click", () => {
+  els.date.value = yesterdayString();
 });
 
 els.rangeButtons.forEach((button) => {

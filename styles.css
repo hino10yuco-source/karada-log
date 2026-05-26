@@ -238,6 +238,11 @@ input:focus {
   white-space: nowrap;
 }
 
+.date-shortcuts {
+  display: flex;
+  gap: 8px;
+}
+
 .icon-button {
   width: 44px;
   min-width: 44px;
