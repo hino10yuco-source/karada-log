@@ -9,6 +9,8 @@ const els = {
   date: document.querySelector("#dateInput"),
   weight: document.querySelector("#weightInput"),
   fat: document.querySelector("#fatInput"),
+  steps: document.querySelector("#stepsInput"),
+  calories: document.querySelector("#caloriesInput"),
   note: document.querySelector("#noteInput"),
   today: document.querySelector("#todayButton"),
   latestWeight: document.querySelector("#latestWeight"),
@@ -597,8 +599,13 @@ async function loadServerRecords() {
 }
 
 function upsertRecord(record) {
+  const existing = records.find((item) => item.date === record.date) || {};
+  const nextRecord = { ...existing };
+  Object.entries(record).forEach(([key, value]) => {
+    if (value !== undefined) nextRecord[key] = value;
+  });
   records = records.filter((item) => item.date !== record.date);
-  records.push(record);
+  records.push(nextRecord);
   records = sortRecords(records);
   saveRecords();
   render();
@@ -646,15 +653,21 @@ els.form.addEventListener("submit", (event) => {
   event.preventDefault();
   const weight = Number(els.weight.value);
   const fat = Number(els.fat.value);
+  const steps = els.steps.value === "" ? undefined : normalizePositiveInteger(els.steps.value);
+  const calories = els.calories.value === "" ? undefined : normalizePositiveInteger(els.calories.value);
   if (!Number.isFinite(weight) || !Number.isFinite(fat)) return;
 
   upsertRecord({
     date: els.date.value,
     weight,
     fat,
+    steps,
+    calories,
     note: els.note.value.trim(),
   });
   els.note.value = "";
+  els.steps.value = "";
+  els.calories.value = "";
 });
 
 els.today.addEventListener("click", () => {
